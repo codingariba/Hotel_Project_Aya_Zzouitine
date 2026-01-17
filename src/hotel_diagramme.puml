@@ -1,0 +1,129 @@
+@startuml
+' ===== Enums =====
+enum TypeChambre {
+    SIMPLE
+    DOUBLE
+    SUITE
+}
+
+enum EtatChambre {
+    DISPONIBLE
+    RESERVEE
+    OCCUPEE
+    MAINTENANCE
+}
+
+enum TypeService {
+    PETIT_DEJEUNER
+    ROOM_SERVICE
+    SPA
+    PARKING
+}
+
+' ===== Observer Pattern =====
+interface RecoitNotification {
+    + notifier(message: String)
+}
+
+class EnvoieNotification {
+    - observateurs: List<RecoitNotification>
+    + ajouterObservateur(obs: RecoitNotification)
+    + notifierObservateurs(message: String)
+}
+
+class NotificationConsole implements RecoitNotification {
+    - nom: String
+    + notifier(message: String)
+}
+
+' ===== Classes principales =====
+class Hotel {
+    - nom: String
+    - chambres: TreeSet<Chambre>
+    - clients: Map<String, Client>
+    - reservations: List<Reservation>
+    - factures: List<Facture>
+    - servicesSupplementaires: List<ServiceSupplementaire>
+    - notifications: EnvoieNotification
+    + ajouterChambre(chambre: Chambre)
+    + ajouterClient(client: Client)
+    + creerReservation(client: Client, type: TypeChambre, dateDebut: LocalDate, dateFin: LocalDate, nbPersonnes: int): Reservation
+    + annulerReservation(idReservation: int)
+    + genererFacture(reservation: Reservation): Facture
+    + consulterDisponibilites(dateDebut: LocalDate, dateFin: LocalDate, type: TypeChambre): List<Chambre>
+    + getNotifications(): EnvoieNotification
+}
+
+class Chambre {
+    - numero: int
+    - etage: int
+    - prixParNuit: double
+    - capacite: int
+    - equipements: List<String>
+    - type: TypeChambre
+    - etat: EtatChambre
+    + getNumero(): int
+    + getType(): TypeChambre
+    + getPrixParNuit(): double
+    + getEtat(): EtatChambre
+}
+
+class Client {
+    - nom: String
+    - prenom: String
+    - cin: String
+    - telephone: String
+    - email: String
+    - historiqueReservations: List<Reservation>
+    - pointsFidelite: int
+    + ajouterReservation(reservation: Reservation)
+}
+
+class Reservation {
+    - id: int
+    - client: Client
+    - chambre: Chambre
+    - dateDebut: LocalDate
+    - dateFin: LocalDate
+    - nombrePersonnes: int
+    - montantTotal: double
+    + getId(): int
+    + getMontantTotal(): double
+}
+
+class Facture {
+    - id: int
+    - reservation: Reservation
+    - services: List<ServiceSupplementaire>
+    - montantTotal: double
+    - payee: boolean
+    + ajouterService(service: ServiceSupplementaire)
+    + appliquerReduction(reduction: double)
+}
+
+class ServiceSupplementaire {
+    - nom: String
+    - type: TypeService
+    - prix: double
+    + getNom(): String
+    + getPrix(): double
+    + getType(): TypeService
+}
+
+' ===== Relations =====
+Hotel "1" o-- "*" Chambre
+Hotel "1" o-- "*" Client
+Hotel "1" o-- "*" Reservation
+Hotel "1" o-- "*" Facture
+Hotel "1" o-- "*" ServiceSupplementaire
+Hotel "1" o-- "1" EnvoieNotification
+
+Reservation "1" --> "1" Client
+Reservation "1" --> "1" Chambre
+Facture "1" --> "1" Reservation
+Facture "1" o-- "*" ServiceSupplementaire
+
+EnvoieNotification "1" o-- "*" RecoitNotification
+NotificationConsole ..|> RecoitNotification
+
+@enduml
